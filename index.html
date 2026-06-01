@@ -1030,10 +1030,18 @@
 
         if (resRecap.status === 403 || textRecap.toLowerCase().includes('forbidden'))
           throw new Error('공공데이터포털 403 Forbidden - API 접근 권한 없음');
-        if (textRecap.startsWith('<'))
-          throw new Error('응답이 JSON이 아닙니다 (서버 오류 또는 키 만료)');
+        if (textRecap.trim().startsWith('<'))
+          throw new Error('공공데이터포털 서버 지연(XML 에러 반환 중)');
 
-        const jsonRecap = JSON.parse(textRecap);
+        // 🌟 방어막(try-catch) 추가: JSON이 아닌 이상한 텍스트가 와도 앱이 죽지 않도록 방어
+        let jsonRecap;
+        try {
+          jsonRecap = JSON.parse(textRecap);
+        } catch (parseError) {
+          console.warn("JSON 파싱 에러 원본 텍스트:", textRecap);
+          throw new Error(`공공데이터포털 서버 일시 장애: ${textRecap.substring(0, 30)}...`);
+        }
+
         let maxFlr = 0, maxHgt = 0, useAprDay = '';
         let jsonTitle = null;
 
