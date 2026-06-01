@@ -665,15 +665,17 @@
 
   <script>
     const APP_CONFIG = {
-      // 1. 공공데이터포털
+      // 1. 공공데이터포털 (건축물대장)
       SERVICE_KEY: 'ac91064e6b1a5db4893d6937d9d368814e53156a80479c707b535f350df23318',
 
-      // 2. 브이월드 (프록시 전용 단일 키)
-      VWORLD_KEY: 'E79BB1F4-4D0A-3CDF-A415-B3A4C7291772',
+      // 2. 브이월드 (VWorld) - 접속 주소에 따라 키 자동 전환
+      VWORLD_KEY: window.location.hostname.includes('github.io') 
+                  ? 'F781960D-00D4-30EB-A0EA-D4051FFAE5F4' // 🟢 라이브 배포용 (sakz-han.github.io)
+                  : '97924A5C-5676-37C0-9BDC-BC42C3B82028', // 🟡 로컬 테스트용 (127.0.0.1, localhost)
 
-      // 3. 카카오 API
-      DEFAULT_KAKAO_REST: '',
-      DEFAULT_KAKAO_JS: ''
+      // 3. 카카오 API (여기에 키를 적어두면 매번 입력할 필요 없이 화면에 자동 세팅됩니다)
+      DEFAULT_KAKAO_REST: '', 
+      DEFAULT_KAKAO_JS: ''    
     };
   </script>
 
@@ -774,11 +776,8 @@
       try {
         const headers = { Authorization: `KakaoAK ${key}` };
         const domain = window.location.hostname || 'localhost';
-        // 🌟 장소 검색 역시 Vercel 프록시 서버를 경유하도록 앞부분 주소 변경
-        // 변경
         const vwSearchUrl =
-          `https://vworld-proxy-vercel.vercel.app/api/vworld?endpoint=search` +
-          `&service=search&request=search&version=2.0` +
+          `https://api.vworld.kr/req/search?service=search&request=search&version=2.0` +
           `&crs=EPSG:4326&size=15&page=1&query=${encodeURIComponent(query)}` +
           `&type=place&format=json&errorformat=json&key=${APP_CONFIG.VWORLD_KEY}&domain=${domain}`;
 
@@ -791,7 +790,6 @@
         const addrData = addrRes && addrRes.ok ? await addrRes.json() : { documents: [] };
         const keywordData = keywordRes && keywordRes.ok ? await keywordRes.json() : { documents: [] };
         const vwData = vwRes && vwRes.ok ? await vwRes.json() : null;
-        console.debug('[SEARCH] VWorld 응답:', vwData, '| vwRes status:', vwRes?.status); // ← 추가
 
         // ✅ [수정 2] VWorld 결과에 address 객체를 미리 담아 저장
         //    → handleAddrSelect() 에서 추가 fetch 불필요
@@ -869,9 +867,8 @@
     //  ✅ [수정 7] maxFeatures=1 파라미터 추가
     // ═══════════════════════════════════════════════════════════
     function buildWfsUrl(typeName, lng, lat) {
-      const domain = window.location.hostname || 'localhost'; // ← 핵심 수정
-      const PROXY_WFS = 'https://vworld-proxy-vercel.vercel.app/api/vworld?endpoint=wfs';
-      const url = `${PROXY_WFS}&SERVICE=WFS&VERSION=1.1.0&REQUEST=GetFeature` +
+      const domain = window.location.hostname || 'localhost';
+      return `${WFS_URL}?SERVICE=WFS&VERSION=1.1.0&REQUEST=GetFeature` +
         `&TYPENAME=${typeName}` +
         `&SRSNAME=EPSG:4326` +
         `&CQL_FILTER=INTERSECTS(ag_geom,POINT(${lng}%20${lat}))` +
@@ -879,8 +876,6 @@
         `${WFS_MAX}` +
         `&key=${APP_CONFIG.VWORLD_KEY}` +
         `&domain=${domain}`;
-      console.debug(`[WFS] ${typeName}`, url); // ← 로그 추가
-      return url;
     }
 
     async function fetchWfsZoning(lng, lat) {
@@ -895,14 +890,6 @@
           .catch(() => null)
       );
       const zoningResults = await Promise.allSettled(zoningFetches);
-      zoningResults.forEach((r, i) => {
-        const layer = WFS_ZONING_LAYERS[i];
-        if (r.status === 'fulfilled') {
-          console.debug(`[ZONING] ${layer.label}`, r.value);
-        } else {
-          console.warn(`[ZONING] ${layer.label} 실패`, r.reason);
-        }
-      });
 
       let area1Str = '';
       for (const settled of zoningResults) {
@@ -945,25 +932,19 @@
     // ═══════════════════════════════════════════════════════════
     async function fetchWfsBldgInfo(lng, lat) {
       const domain = window.location.hostname || 'localhost';
-      const url = `https://vworld-proxy-vercel.vercel.app/api/vworld?endpoint=wfs` +
-        `&SERVICE=WFS&VERSION=1.1.0&REQUEST=GetFeature` +
+      const url = `${WFS_URL}?SERVICE=WFS&VERSION=1.1.0&REQUEST=GetFeature` +
         `&TYPENAME=lt_c_bldginfo&SRSNAME=EPSG:4326` +
         `&CQL_FILTER=INTERSECTS(ag_geom,POINT(${lng}%20${lat}))` +
         `&outputFormat=application%2Fjson&maxFeatures=1` +
         `&key=${APP_CONFIG.VWORLD_KEY}&domain=${domain}`;
-
-      console.debug('[BLDGINFO] 요청 URL:', url);  // ← 추가
-
       try {
         const res = await fetch(url);
-        console.debug('[BLDGINFO] 응답 status:', res.status);  // ← 추가
         if (!res.ok) return null;
         const text = await res.text();
-        console.debug('[BLDGINFO] 응답 body:', text.slice(0, 200));  // ← 추가 (앞 200자만)
         if (text.trim().startsWith('<')) return null;
         const json = JSON.parse(text);
         if ((json?.features?.length ?? 0) > 0) {
-          console.debug('[BLDGINFO] 파싱 성공:', json.features[0].properties);  // ← 추가
+          // 좌표로 정확히 찔렀기 때문에 정렬할 필요 없이 첫 번째 건물 반환
           return json.features[0].properties;
         }
       } catch (e) { console.warn('WFS 건축물정보 호출 실패:', e.message); }
@@ -1448,7 +1429,6 @@
       // 지도 렌더
       if (_lastCoords) renderKakaoMap(_lastCoords.lat, _lastCoords.lng);
     }
-
   </script>
 </body>
 
