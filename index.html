@@ -774,6 +774,7 @@
       try {
         const headers = { Authorization: `KakaoAK ${key}` };
         const domain = window.location.hostname || 'localhost';
+        // ✅ [수정 후] Vercel 프록시에 장소 검색(search) 요청
         const vwSearchUrl =
           `${WFS_URL}?endpoint=search&service=search&request=search&version=2.0` +
           `&crs=EPSG:4326&size=15&page=1&query=${encodeURIComponent(query)}` +
@@ -864,9 +865,8 @@
     //  ✅ [수정 1] 용도지역: 직렬 루프 → Promise.race로 교체
     //  ✅ [수정 7] maxFeatures=1 파라미터 추가
     // ═══════════════════════════════════════════════════════════
+    // ✅ [수정 후] Vercel 프록시에 용도지역/지구(wfs) 요청
     function buildWfsUrl(typeName, lng, lat) {
-      const domain = window.location.hostname || 'localhost';
-      function buildWfsUrl(typeName, lng, lat) {
       const domain = window.location.hostname || 'localhost';
       return `${WFS_URL}?endpoint=wfs&SERVICE=WFS&VERSION=1.1.0&REQUEST=GetFeature` +
         `&TYPENAME=${typeName}` +
@@ -930,6 +930,7 @@
     // ═══════════════════════════════════════════════════════════
     //  2-1. VWorld WFS 건축물정보(lt_c_bldginfo) 조회 (좌표 기반 핀셋 호출)
     // ═══════════════════════════════════════════════════════════
+    // ✅ [수정 후] Vercel 프록시에 건축물 정보(wfs) 요청
     async function fetchWfsBldgInfo(lng, lat) {
       const domain = window.location.hostname || 'localhost';
       const url = `${WFS_URL}?endpoint=wfs&SERVICE=WFS&VERSION=1.1.0&REQUEST=GetFeature` +
