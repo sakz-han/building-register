@@ -864,16 +864,17 @@
     //  2. VWorld WFS 통신 (BBOX 기반 궁극의 해결책)
     // ═══════════════════════════════════════════════════════════
 
-    // 🌟 1. 컬럼명(geom, ag_geom)을 몰라도 되는 BBOX 방식 적용
+    /// 🌟 1. url 생성기 (BBOX 좌표 순서를 WFS 1.1.0 규격인 Y, X로 수정)
     function buildWfsUrl(typeName, lng, lat) {
       const domain = window.location.hostname || 'localhost';
-      // 중심 좌표를 기준으로 사방 약 10m의 보이지 않는 네모 박스(BBOX)를 만듭니다.
-      const e = 0.0001;
-      const bbox = `${lng - e},${lat - e},${lng + e},${lat + e},EPSG:4326`;
+      const e = 0.0001; // 약 10m 오차 허용 박스
+
+      // 🎯 마법의 수정: lat(위도)가 먼저, lng(경도)가 뒤로 와야 합니다!
+      const bbox = `${lat - e},${lng - e},${lat + e},${lng + e},EPSG:4326`;
 
       return `${WFS_URL}?endpoint=wfs&SERVICE=WFS&VERSION=1.1.0&REQUEST=GetFeature` +
         `&TYPENAME=${typeName}&SRSNAME=EPSG:4326` +
-        `&BBOX=${bbox}` + // 🎯 마법의 파라미터: 컬럼명 불일치 에러 원천 차단!
+        `&BBOX=${bbox}` +
         `&outputFormat=application%2Fjson${WFS_MAX}` +
         `&key=${APP_CONFIG.VWORLD_KEY}&domain=${domain}`;
     }
