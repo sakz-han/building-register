@@ -864,16 +864,14 @@
     //  2. VWorld WFS 용도지역/지구 조회
     // ═══════════════════════════════════════════════════════════
 
-    function buildWfsUrl(typeName, lng, lat) {
+    // 🌟 1. url 생성기에 geomCol 파라미터(기본값 'geom')를 추가합니다.
+    function buildWfsUrl(typeName, lng, lat, geomCol = 'geom') {
       const domain = window.location.hostname || 'localhost';
       return `${WFS_URL}?endpoint=wfs&SERVICE=WFS&VERSION=1.1.0&REQUEST=GetFeature` +
-        `&TYPENAME=${typeName}` +
-        `&SRSNAME=EPSG:4326` +
-        `&CQL_FILTER=INTERSECTS(geom,POINT(${lng}%20${lat}))` + // 🌟 ag_geom을 geom으로 수정!
-        `&outputFormat=application%2Fjson` +
-        `${WFS_MAX}` +
-        `&key=${APP_CONFIG.VWORLD_KEY}` +
-        `&domain=${domain}`;
+        `&TYPENAME=${typeName}&SRSNAME=EPSG:4326` +
+        `&CQL_FILTER=INTERSECTS(${geomCol},POINT(${lng}%20${lat}))` + // 하드코딩 대신 변수 사용!
+        `&outputFormat=application%2Fjson${WFS_MAX}` +
+        `&key=${APP_CONFIG.VWORLD_KEY}&domain=${domain}`;
     }
 
     async function fetchWfsZoning(lng, lat) {
@@ -928,14 +926,10 @@
     // ═══════════════════════════════════════════════════════════
     //  2-1. VWorld WFS 건축물정보(lt_c_bldginfo) 조회 (좌표 기반 핀셋 호출)
     // ═══════════════════════════════════════════════════════════
-    // ✅ [수정 후] Vercel 프록시에 건축물 정보(wfs) 요청
     async function fetchWfsBldgInfo(lng, lat) {
-      const domain = window.location.hostname || 'localhost';
-      const url = `${WFS_URL}?endpoint=wfs&SERVICE=WFS&VERSION=1.1.0&REQUEST=GetFeature` +
-        `&TYPENAME=lt_c_bldginfo&SRSNAME=EPSG:4326` +
-        `&CQL_FILTER=INTERSECTS(ag_geom,POINT(${lng}%20${lat}))` +
-        `&outputFormat=application%2Fjson&maxFeatures=1` +
-        `&key=${APP_CONFIG.VWORLD_KEY}&domain=${domain}`;
+      // 🌟 여기서 만능 URL 생성기를 활용합니다! 4번째 파라미터로 'ag_geom'을 넘겨줍니다.
+      const url = buildWfsUrl('lt_c_bldginfo', lng, lat, 'ag_geom');
+
       try {
         const res = await fetch(url);
         if (!res.ok) return null;
