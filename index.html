@@ -861,15 +861,19 @@
     }
 
     // ═══════════════════════════════════════════════════════════
-    //  2. VWorld WFS 용도지역/지구 조회
+    //  2. VWorld WFS 통신 (BBOX 기반 궁극의 해결책)
     // ═══════════════════════════════════════════════════════════
 
-    // 🌟 1. url 생성기에 geomCol 파라미터를 명시적으로 받도록 수정
-    function buildWfsUrl(typeName, lng, lat, geomCol) {
+    // 🌟 1. 컬럼명(geom, ag_geom)을 몰라도 되는 BBOX 방식 적용
+    function buildWfsUrl(typeName, lng, lat) {
       const domain = window.location.hostname || 'localhost';
+      // 중심 좌표를 기준으로 사방 약 10m의 보이지 않는 네모 박스(BBOX)를 만듭니다.
+      const e = 0.0001;
+      const bbox = `${lng - e},${lat - e},${lng + e},${lat + e},EPSG:4326`;
+
       return `${WFS_URL}?endpoint=wfs&SERVICE=WFS&VERSION=1.1.0&REQUEST=GetFeature` +
         `&TYPENAME=${typeName}&SRSNAME=EPSG:4326` +
-        `&CQL_FILTER=INTERSECTS(${geomCol},POINT(${lng}%20${lat}))` + // 넘어온 컬럼명 사용
+        `&BBOX=${bbox}` + // 🎯 마법의 파라미터: 컬럼명 불일치 에러 원천 차단!
         `&outputFormat=application%2Fjson${WFS_MAX}` +
         `&key=${APP_CONFIG.VWORLD_KEY}&domain=${domain}`;
     }
@@ -883,14 +887,12 @@
         return name ? String(name).trim() : fallback;
       };
 
-      // ✅ 용도지역 처리 (반드시 'geom' 파라미터 전달)
+      // ✅ 4번째 파라미터(geom) 같은 건 다 지워버리고 깔끔하게 호출합니다.
       const zoningFetches = WFS_ZONING_LAYERS.map(layer =>
-        fetch(buildWfsUrl(layer.typeName, lng, lat, 'geom'))
+        fetch(buildWfsUrl(layer.typeName, lng, lat))
           .then(r => r.ok ? r.json() : null)
           .then(json => {
-            if (json?.features?.length > 0) {
-              return extractName(json.features[0].properties, layer.label);
-            }
+            if (json?.features?.length > 0) return extractName(json.features[0].properties, layer.label);
             return null;
           }).catch(() => null)
       );
@@ -898,14 +900,11 @@
       const zoningResults = await Promise.all(zoningFetches);
       const area1Str = zoningResults.find(val => val !== null) || '—';
 
-      // ✅ 용도지구 처리 (반드시 'geom' 파라미터 전달)
       const districtFetches = WFS_DISTRICT_LAYERS.map(layer =>
-        fetch(buildWfsUrl(layer.typeName, lng, lat, 'geom'))
+        fetch(buildWfsUrl(layer.typeName, lng, lat))
           .then(r => r.ok ? r.json() : null)
           .then(json => {
-            if (json?.features?.length > 0) {
-              return extractName(json.features[0].properties, layer.label);
-            }
+            if (json?.features?.length > 0) return extractName(json.features[0].properties, layer.label);
             return null;
           }).catch(() => null)
       );
@@ -920,11 +919,11 @@
     }
 
     // ═══════════════════════════════════════════════════════════
-    //  2-1. VWorld WFS 건축물정보(lt_c_bldginfo) 조회 (좌표 기반 핀셋 호출)
+    //  2-1. VWorld WFS 건축물정보(lt_c_bldginfo) 조회
     // ═══════════════════════════════════════════════════════════
     async function fetchWfsBldgInfo(lng, lat) {
-      // ✅ 건축물 정보는 반드시 'ag_geom' 파라미터 전달
-      const url = buildWfsUrl('lt_c_bldginfo', lng, lat, 'ag_geom');
+      // ✅ 여기서도 4번째 파라미터(ag_geom) 없이 그냥 깔끔하게 부릅니다.
+      const url = buildWfsUrl('lt_c_bldginfo', lng, lat);
 
       try {
         const res = await fetch(url);
