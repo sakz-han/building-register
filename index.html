@@ -864,12 +864,12 @@
     //  2. VWorld WFS 용도지역/지구 조회
     // ═══════════════════════════════════════════════════════════
 
-    // 🌟 1. 공간 필터는 반드시 'ag_geom'으로 고정합니다! (오류 원인 제거)
-    function buildWfsUrl(typeName, lng, lat) {
+    // 🌟 1. url 생성기에 geomCol 파라미터를 명시적으로 받도록 수정
+    function buildWfsUrl(typeName, lng, lat, geomCol) {
       const domain = window.location.hostname || 'localhost';
       return `${WFS_URL}?endpoint=wfs&SERVICE=WFS&VERSION=1.1.0&REQUEST=GetFeature` +
         `&TYPENAME=${typeName}&SRSNAME=EPSG:4326` +
-        `&CQL_FILTER=INTERSECTS(ag_geom,POINT(${lng}%20${lat}))` + // 다시 ag_geom으로 복구
+        `&CQL_FILTER=INTERSECTS(${geomCol},POINT(${lng}%20${lat}))` + // 넘어온 컬럼명 사용
         `&outputFormat=application%2Fjson${WFS_MAX}` +
         `&key=${APP_CONFIG.VWORLD_KEY}&domain=${domain}`;
     }
@@ -877,17 +877,15 @@
     async function fetchWfsZoning(lng, lat) {
       const wfsBadge = document.getElementById('statusWfs');
 
-      // 🌟 2. 브이월드의 진짜 명칭 키값('mnm')을 최우선으로 잡아내는 헬퍼 함수 추가
       const extractName = (props, fallback) => {
         if (!props) return null;
-        // 제3종일반주거지역, 중요시설물보호지구 등은 모두 'mnm' 키에 담겨 옵니다.
         const name = props.mnm || props.dgm_nm || props.uname || props.uq_nm || props.ud_nm || props.zone_nm || props.name;
         return name ? String(name).trim() : fallback;
       };
 
-      // ✅ 용도지역 처리 (제3종일반주거지역 등)
+      // ✅ 용도지역 처리 (반드시 'geom' 파라미터 전달)
       const zoningFetches = WFS_ZONING_LAYERS.map(layer =>
-        fetch(buildWfsUrl(layer.typeName, lng, lat))
+        fetch(buildWfsUrl(layer.typeName, lng, lat, 'geom'))
           .then(r => r.ok ? r.json() : null)
           .then(json => {
             if (json?.features?.length > 0) {
@@ -900,9 +898,9 @@
       const zoningResults = await Promise.all(zoningFetches);
       const area1Str = zoningResults.find(val => val !== null) || '—';
 
-      // ✅ 용도지구 처리 (자연취락지구, 경관녹지 등 중복 가능하므로 모두 수집)
+      // ✅ 용도지구 처리 (반드시 'geom' 파라미터 전달)
       const districtFetches = WFS_DISTRICT_LAYERS.map(layer =>
-        fetch(buildWfsUrl(layer.typeName, lng, lat))
+        fetch(buildWfsUrl(layer.typeName, lng, lat, 'geom'))
           .then(r => r.ok ? r.json() : null)
           .then(json => {
             if (json?.features?.length > 0) {
@@ -925,8 +923,8 @@
     //  2-1. VWorld WFS 건축물정보(lt_c_bldginfo) 조회 (좌표 기반 핀셋 호출)
     // ═══════════════════════════════════════════════════════════
     async function fetchWfsBldgInfo(lng, lat) {
-      // 이제 URL 생성기를 파라미터 없이 아주 깔끔하게 공용으로 사용할 수 있습니다!
-      const url = buildWfsUrl('lt_c_bldginfo', lng, lat);
+      // ✅ 건축물 정보는 반드시 'ag_geom' 파라미터 전달
+      const url = buildWfsUrl('lt_c_bldginfo', lng, lat, 'ag_geom');
 
       try {
         const res = await fetch(url);
