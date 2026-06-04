@@ -888,17 +888,72 @@
     }
 
     // ═══════════════════════════════════════════════════════════
-    //  2. VWorld WFS 통신 (BBOX 기반 궁극의 해결책)
+    //  레이어 정의 — 공식 VWorld WFS 스키마 기준
+    //  ✅ 모든 레이어의 용도명 속성키 = uname (스키마 확인 완료)
+    //  ❌ lt_c_ud101/201/301/401 은 VWorld WFS 미제공 → 제거
     // ═══════════════════════════════════════════════════════════
 
-    /// 🌟 1. url 생성기 (BBOX 좌표 순서를 WFS 1.1.0 규격인 Y, X로 수정)
+    const WFS_ZONING_LAYERS = [
+      { typeName: 'lt_c_uq111', label: '도시지역' },
+      { typeName: 'lt_c_uq112', label: '관리지역' },
+      { typeName: 'lt_c_uq113', label: '농림지역' },
+      { typeName: 'lt_c_uq114', label: '자연환경보전지역' },
+    ];
+
+    const WFS_DISTRICT_LAYERS = [
+      // ── 국토계획법 용도지구 ────────────────────────────────────
+      { typeName: 'lt_c_uq121', label: '경관지구' },
+      { typeName: 'lt_c_uq122', label: '미관지구' },
+      { typeName: 'lt_c_uq123', label: '고도지구' },
+      { typeName: 'lt_c_uq124', label: '방화지구' },
+      { typeName: 'lt_c_uq125', label: '방재지구' },
+      { typeName: 'lt_c_uq126', label: '보호지구' },
+      { typeName: 'lt_c_uq128', label: '취락지구' },
+      { typeName: 'lt_c_uq129', label: '개발진흥지구' },
+      { typeName: 'lt_c_uq130', label: '특정용도제한지구' },
+      { typeName: 'lt_c_uq141', label: '국토계획구역' },
+      { typeName: 'lt_c_uq162', label: '도시자연공원구역' },
+      { typeName: 'lt_c_ud801', label: '개발제한구역' },
+
+      // ── 타 법령 지역·지구·구역 ────────────────────────────────
+      { typeName: 'lt_c_um000', label: '가축사육제한구역' },
+      { typeName: 'lt_c_uo101', label: '학교환경위생정화구역' },
+      { typeName: 'lt_c_up201', label: '재해위험지구' },
+      { typeName: 'lt_c_up401', label: '급경사재해예방지역' },
+      { typeName: 'lt_c_um710', label: '상수원보호구역' },
+      { typeName: 'lt_c_um901', label: '습지보호지역' },
+      { typeName: 'lt_c_um301', label: '대기환경규제지역' },
+      { typeName: 'lt_c_um221', label: '야생동식물보호구역' },
+      { typeName: 'lt_c_uf151', label: '산림보호구역' },
+      { typeName: 'lt_c_uf602', label: '임업및산촌진흥권역' },
+      { typeName: 'lt_c_uf901', label: '백두대간보호지역' },
+      { typeName: 'lt_c_ub901', label: '시장정비구역' },
+      { typeName: 'lt_c_ud601', label: '주거환경개선지구' },
+      { typeName: 'lt_c_ud610', label: '국민임대주택지구' },
+      { typeName: 'lt_c_ud620', label: '보금자리주택지구' },
+      { typeName: 'lt_c_uh402', label: '자유무역지역' },
+      { typeName: 'lt_c_uh501', label: '유통단지' },
+      { typeName: 'lt_c_uh701', label: '벤처기업육성지역' },
+      { typeName: 'lt_c_uj401', label: '온천지구' },
+      { typeName: 'lt_c_uo501', label: '전통사찰보존구역' },
+      { typeName: 'lt_c_uo601', label: '관광지' },
+    ];
+
+
+    // ═══════════════════════════════════════════════════════════
+    //  2. VWorld WFS 통신
+    //  ✅ 속성키 uname 단일 고정 (스키마 확인 완료)
+    //  ✅ uname 없을 때 label(레이어명)을 fallback으로 표시
+    // ═══════════════════════════════════════════════════════════
+
+    /**
+     * WFS BBOX URL 생성기
+     * WFS 1.1.0 규격: BBOX = minLat, minLng, maxLat, maxLng
+     */
     function buildWfsUrl(typeName, lng, lat) {
       const domain = window.location.hostname || 'localhost';
       const e = 0.0001; // 약 10m 오차 허용 박스
-
-      // 🎯 마법의 수정: lat(위도)가 먼저, lng(경도)가 뒤로 와야 합니다!
       const bbox = `${lat - e},${lng - e},${lat + e},${lng + e},EPSG:4326`;
-
       return `${WFS_URL}?endpoint=wfs&SERVICE=WFS&VERSION=1.1.0&REQUEST=GetFeature` +
         `&TYPENAME=${typeName}&SRSNAME=EPSG:4326` +
         `&BBOX=${bbox}` +
@@ -906,63 +961,75 @@
         `&key=${APP_CONFIG.VWORLD_KEY}&domain=${domain}`;
     }
 
+    /**
+     * 단일 WFS 레이어 조회
+     * ✅ uname 고정 파싱 — 스키마상 모든 레이어 동일
+     * uname이 비어 있으면 layer.label을 fallback으로 반환
+     */
+    async function fetchOneLayer(layer, lng, lat) {
+      try {
+        const res = await fetch(buildWfsUrl(layer.typeName, lng, lat));
+        if (!res.ok) return null;
+        const text = await res.text();
+        if (!text || text.trim().startsWith('<')) return null;
+        const json = JSON.parse(text);
+        if (json?.features?.length > 0) {
+          const uname = json.features[0].properties?.uname;
+          // uname이 있으면 그 값, 없으면 레이어 label을 fallback으로
+          return (uname && uname.trim()) ? uname.trim() : layer.label;
+        }
+      } catch (e) {
+        console.warn(`[WFS] ${layer.typeName} 실패:`, e.message);
+      }
+      return null; // feature 없음 = 해당 구역 아님
+    }
+
+    /**
+     * 메인: 용도지역 + 용도지구/구역 병렬 조회
+     */
     async function fetchWfsZoning(lng, lat) {
       const wfsBadge = document.getElementById('statusWfs');
 
-      const extractName = (props, fallback) => {
-        if (!props) return null;
-        const name = props.mnm || props.dgm_nm || props.uname || props.uq_nm || props.ud_nm || props.zone_nm || props.name;
-        return name ? String(name).trim() : fallback;
-      };
-
-      // ✅ 4번째 파라미터(geom) 같은 건 다 지워버리고 깔끔하게 호출합니다.
-      const zoningFetches = WFS_ZONING_LAYERS.map(layer =>
-        fetch(buildWfsUrl(layer.typeName, lng, lat))
-          .then(r => r.ok ? r.json() : null)
-          .then(json => {
-            if (json?.features?.length > 0) return extractName(json.features[0].properties, layer.label);
-            return null;
-          }).catch(() => null)
+      // ── ① 용도지역 레이어 병렬 조회 ──────────────────────────
+      const zoningResults = await Promise.all(
+        WFS_ZONING_LAYERS.map(layer => fetchOneLayer(layer, lng, lat))
       );
+      const area1Str = zoningResults.find(v => v !== null) || '—';
 
-      const zoningResults = await Promise.all(zoningFetches);
-      const area1Str = zoningResults.find(val => val !== null) || '—';
-
-      const districtFetches = WFS_DISTRICT_LAYERS.map(layer =>
-        fetch(buildWfsUrl(layer.typeName, lng, lat))
-          .then(r => r.ok ? r.json() : null)
-          .then(json => {
-            if (json?.features?.length > 0) return extractName(json.features[0].properties, layer.label);
-            return null;
-          }).catch(() => null)
+      // ── ② 용도지구/구역 레이어 병렬 조회 ─────────────────────
+      const districtResults = await Promise.all(
+        WFS_DISTRICT_LAYERS.map(layer => fetchOneLayer(layer, lng, lat))
       );
+      // 중복 제거 후 결합 (개발제한구역이 양쪽에 잡히는 경우 방지)
+      const uniqueDistricts = [...new Set(districtResults.filter(Boolean))];
+      const area2Str = uniqueDistricts.length > 0 ? uniqueDistricts.join(' / ') : '—';
 
-      const districtResults = await Promise.all(districtFetches);
-      const validDistricts = districtResults.filter(Boolean);
-      const area2Str = validDistricts.length > 0 ? validDistricts.join(' / ') : '—';
+      // ── ③ 상태 뱃지 ───────────────────────────────────────────
+      const hasData = area1Str !== '—' || area2Str !== '—';
+      wfsBadge.className = `status-badge badge-wfs ${hasData ? 'on' : ''}`;
 
-      wfsBadge.className = `status-badge badge-wfs ${area1Str !== '—' || area2Str !== '—' ? 'on' : 'warn'}`;
-
+      console.log('[WFS] 용도지역:', area1Str, '| 용도지구/구역:', area2Str);
       return { area1Str, area2Str };
     }
 
+
     // ═══════════════════════════════════════════════════════════
-    //  2-1. VWorld WFS 건축물정보(lt_c_bldginfo) 조회
+    //  2-1. VWorld WFS 건축물정보 (lt_c_bldginfo) 조회
     // ═══════════════════════════════════════════════════════════
     async function fetchWfsBldgInfo(lng, lat) {
-      // ✅ 여기서도 4번째 파라미터(ag_geom) 없이 그냥 깔끔하게 부릅니다.
       const url = buildWfsUrl('lt_c_bldginfo', lng, lat);
-
       try {
         const res = await fetch(url);
         if (!res.ok) return null;
         const text = await res.text();
-        if (text.trim().startsWith('<')) return null;
+        if (!text || text.trim().startsWith('<')) return null;
         const json = JSON.parse(text);
         if ((json?.features?.length ?? 0) > 0) {
           return json.features[0].properties;
         }
-      } catch (e) { console.warn('WFS 건축물정보 호출 실패:', e.message); }
+      } catch (e) {
+        console.warn('[WFS] 건축물정보 호출 실패:', e.message);
+      }
       return null;
     }
 
