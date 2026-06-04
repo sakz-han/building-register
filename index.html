@@ -915,7 +915,30 @@
         return name ? String(name).trim() : fallback;
       };
 
-      // ✅ 4번째 파라미터(geom) 같은 건 다 지워버리고 깔끔하게 호출합니다.
+      // 🌟 핵심 마법: 수십 개의 레이어를 5개씩 묶어서 안전하게 요청 (누락 완벽 방지)
+      async function fetchInBatches(layers, batchSize = 5) {
+        const results = [];
+        for (let i = 0; i < layers.length; i += batchSize) {
+          const batch = layers.slice(i, i + batchSize);
+          const fetches = batch.map(layer =>
+            fetch(buildWfsUrl(layer.typeName, lng, lat))
+              .then(r => r.ok ? r.json() : null)
+              .then(json => {
+                if (json?.features?.length > 0) return extractName(json.features[0].properties, layer.label);
+                return null;
+              }).catch((e) => {
+                console.warn(`${layer.label} 호출 실패:`, e);
+                return null;
+              })
+          );
+          // 5개가 완료될 때까지 기다렸다가 다음 5개를 요청
+          const batchResults = await Promise.all(fetches);
+          results.push(...batchResults);
+        }
+        return results;
+      }
+
+      // 1. 용도지역 (기존 방식 유지 - 개수가 적으므로 문제없음)
       const zoningFetches = WFS_ZONING_LAYERS.map(layer =>
         fetch(buildWfsUrl(layer.typeName, lng, lat))
           .then(r => r.ok ? r.json() : null)
@@ -924,20 +947,13 @@
             return null;
           }).catch(() => null)
       );
-
       const zoningResults = await Promise.all(zoningFetches);
       const area1Str = zoningResults.find(val => val !== null) || '—';
 
-      const districtFetches = WFS_DISTRICT_LAYERS.map(layer =>
-        fetch(buildWfsUrl(layer.typeName, lng, lat))
-          .then(r => r.ok ? r.json() : null)
-          .then(json => {
-            if (json?.features?.length > 0) return extractName(json.features[0].properties, layer.label);
-            return null;
-          }).catch(() => null)
-      );
+      // 2. 용도지구/규제 (30개가 넘으므로 5개씩 쪼개서 누락 없이 전부 긁어오기!)
+      const districtResults = await fetchInBatches(WFS_DISTRICT_LAYERS, 5);
 
-      const districtResults = await Promise.all(districtFetches);
+      // 값이 존재하는 것들만 필터링 후 텍스트 합치기
       const validDistricts = districtResults.filter(Boolean);
       const area2Str = validDistricts.length > 0 ? validDistricts.join(' / ') : '—';
 
