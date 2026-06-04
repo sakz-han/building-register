@@ -964,9 +964,9 @@
       const externalLinks = document.getElementById('externalLinks');
       const naverBtn = document.getElementById('naverBtn');
 
-      // 👇 네이버 부동산 모바일 전용 검색 라우터를 활용한 텍스트 다이렉트 검색 우회
+      // 👇 네이버 부동산: 단순 좌표가 아닌 '정확한 주소 검색' 기반 딥링크로 변경
       const targetAddress = doc.road_address?.address_name || doc.address?.address_name || doc.address_name || '';
-      naverBtn.href = `https://m.land.naver.com/search/result/${encodeURIComponent(targetAddress)}`;
+      naverBtn.href = `https://new.land.naver.com/search?sk=${encodeURIComponent(targetAddress)}`;
 
       // 목록을 클릭하면 버튼 그룹이 화면에 나타남
       externalLinks.style.display = 'flex';
