@@ -864,12 +864,12 @@
     //  2. VWorld WFS 용도지역/지구 조회
     // ═══════════════════════════════════════════════════════════
 
-    // 🌟 1. url 생성기에 geomCol 파라미터(기본값 'geom')를 추가합니다.
-    function buildWfsUrl(typeName, lng, lat, geomCol = 'geom') {
+    // 🌟 1. 공간 필터는 반드시 'ag_geom'으로 고정합니다! (오류 원인 제거)
+    function buildWfsUrl(typeName, lng, lat) {
       const domain = window.location.hostname || 'localhost';
       return `${WFS_URL}?endpoint=wfs&SERVICE=WFS&VERSION=1.1.0&REQUEST=GetFeature` +
         `&TYPENAME=${typeName}&SRSNAME=EPSG:4326` +
-        `&CQL_FILTER=INTERSECTS(${geomCol},POINT(${lng}%20${lat}))` + // 하드코딩 대신 변수 사용!
+        `&CQL_FILTER=INTERSECTS(ag_geom,POINT(${lng}%20${lat}))` + // 다시 ag_geom으로 복구
         `&outputFormat=application%2Fjson${WFS_MAX}` +
         `&key=${APP_CONFIG.VWORLD_KEY}&domain=${domain}`;
     }
@@ -877,58 +877,56 @@
     async function fetchWfsZoning(lng, lat) {
       const wfsBadge = document.getElementById('statusWfs');
 
-      // ✅ [수정 1] 용도지역 5개를 동시 요청 → 가장 먼저 유효한 결과를 반환한 것 사용
-      //    Promise.race 대신 Promise.allSettled로 전부 받고 첫 번째 유효값 선택
-      //    (race는 빈 결과도 '가장 빠른 응답'으로 낙점될 수 있으므로 allSettled가 안전)
+      // 🌟 2. 브이월드의 진짜 명칭 키값('mnm')을 최우선으로 잡아내는 헬퍼 함수 추가
+      const extractName = (props, fallback) => {
+        if (!props) return null;
+        // 제3종일반주거지역, 중요시설물보호지구 등은 모두 'mnm' 키에 담겨 옵니다.
+        const name = props.mnm || props.dgm_nm || props.uname || props.uq_nm || props.ud_nm || props.zone_nm || props.name;
+        return name ? String(name).trim() : fallback;
+      };
+
+      // ✅ 용도지역 처리 (제3종일반주거지역 등)
       const zoningFetches = WFS_ZONING_LAYERS.map(layer =>
         fetch(buildWfsUrl(layer.typeName, lng, lat))
           .then(r => r.ok ? r.json() : null)
-          .catch(() => null)
-      );
-      const zoningResults = await Promise.allSettled(zoningFetches);
-
-      let area1Str = '';
-      for (const settled of zoningResults) {
-        if (settled.status !== 'fulfilled' || !settled.value) continue;
-        const json = settled.value;
-        if ((json?.features?.length ?? 0) === 0) continue;
-        const props = json.features[0].properties || {};
-        const nameProp = props.uname || props.prposArea1Nm || props.uq_nm || props.ud_nm || props.uq111_nm || props.zone_nm || props.name;
-        if (nameProp) { area1Str = String(nameProp); break; }
-      }
-
-      // 용도지구 9개 — 기존과 동일하게 병렬 (이미 병렬이었음), maxFeatures=1만 추가
-      const districtResults = await Promise.all(
-        WFS_DISTRICT_LAYERS.map(async layer => {
-          try {
-            const res = await fetch(buildWfsUrl(layer.typeName, lng, lat));
-            if (!res.ok) return null;
-            const json = await res.json();
-            if ((json?.features || []).length === 0) return null;
-            const props = json.features[0].properties || {};
-            const nameVal = props.uname || props.prposArea2Nm || props.uq_nm || props.zone_nm || props.mnm || layer.label;
-            return nameVal && String(nameVal).trim() !== '' ? String(nameVal) : null;
-          } catch { return null; }
-        })
+          .then(json => {
+            if (json?.features?.length > 0) {
+              return extractName(json.features[0].properties, layer.label);
+            }
+            return null;
+          }).catch(() => null)
       );
 
-      const area2Str = districtResults.filter(Boolean).join(' / ');
+      const zoningResults = await Promise.all(zoningFetches);
+      const area1Str = zoningResults.find(val => val !== null) || '—';
 
-      if (area1Str || area2Str) {
-        wfsBadge.classList.add('on'); wfsBadge.classList.remove('warn');
-      } else {
-        wfsBadge.classList.add('warn');
-      }
+      // ✅ 용도지구 처리 (자연취락지구, 경관녹지 등 중복 가능하므로 모두 수집)
+      const districtFetches = WFS_DISTRICT_LAYERS.map(layer =>
+        fetch(buildWfsUrl(layer.typeName, lng, lat))
+          .then(r => r.ok ? r.json() : null)
+          .then(json => {
+            if (json?.features?.length > 0) {
+              return extractName(json.features[0].properties, layer.label);
+            }
+            return null;
+          }).catch(() => null)
+      );
 
-      return { area1Str: area1Str || '—', area2Str: area2Str || '—' };
+      const districtResults = await Promise.all(districtFetches);
+      const validDistricts = districtResults.filter(Boolean);
+      const area2Str = validDistricts.length > 0 ? validDistricts.join(' / ') : '—';
+
+      wfsBadge.className = `status-badge badge-wfs ${area1Str !== '—' || area2Str !== '—' ? 'on' : 'warn'}`;
+
+      return { area1Str, area2Str };
     }
 
     // ═══════════════════════════════════════════════════════════
     //  2-1. VWorld WFS 건축물정보(lt_c_bldginfo) 조회 (좌표 기반 핀셋 호출)
     // ═══════════════════════════════════════════════════════════
     async function fetchWfsBldgInfo(lng, lat) {
-      // 🌟 여기서 만능 URL 생성기를 활용합니다! 4번째 파라미터로 'ag_geom'을 넘겨줍니다.
-      const url = buildWfsUrl('lt_c_bldginfo', lng, lat, 'ag_geom');
+      // 이제 URL 생성기를 파라미터 없이 아주 깔끔하게 공용으로 사용할 수 있습니다!
+      const url = buildWfsUrl('lt_c_bldginfo', lng, lat);
 
       try {
         const res = await fetch(url);
@@ -937,7 +935,6 @@
         if (text.trim().startsWith('<')) return null;
         const json = JSON.parse(text);
         if ((json?.features?.length ?? 0) > 0) {
-          // 좌표로 정확히 찔렀기 때문에 정렬할 필요 없이 첫 번째 건물 반환
           return json.features[0].properties;
         }
       } catch (e) { console.warn('WFS 건축물정보 호출 실패:', e.message); }
