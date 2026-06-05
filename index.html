@@ -3,7 +3,8 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0c10" />
   <title>건축물대장 통합 조회 v1.0</title>
   <link rel="icon" href="data:,">
   <style>
@@ -22,77 +23,122 @@
       --muted: #6b7589;
       --dim: #3a4055;
       --purple: #c084fc;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
     }
 
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      overscroll-behavior-y: none;
     }
 
     body {
       font-family: 'Noto Sans KR', sans-serif;
       background: var(--bg);
       color: var(--text);
-      height: 100vh;
-      overflow: hidden;
+      min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       flex-direction: column;
+      font-size: 15px;
+      -webkit-text-size-adjust: 100%;
     }
 
+    /* ─────────── 헤더 ─────────── */
     header {
       background: var(--surface);
       border-bottom: 1px solid var(--border);
-      padding: 16px 24px;
+      padding: calc(12px + var(--safe-top)) 16px 12px;
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
       flex-shrink: 0;
+      position: sticky;
+      top: 0;
+      z-index: 50;
     }
 
     .logo-mark {
-      width: 36px;
-      height: 36px;
+      width: 38px;
+      height: 38px;
       background: var(--accent);
-      border-radius: 8px;
+      border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 18px;
+      font-size: 19px;
       color: #000;
       flex-shrink: 0;
     }
 
     .logo-text h1 {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 700;
       color: var(--text);
       letter-spacing: -.3px;
     }
 
     .logo-text p {
-      font-size: 11px;
+      font-size: 10px;
       color: var(--muted);
       font-family: 'JetBrains Mono', monospace;
-      margin-top: 3px;
+      margin-top: 2px;
     }
 
-    .api-status-group {
-      display: flex;
+    .status-toggle {
       margin-left: auto;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 7px 12px;
+      font-size: 11px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+
+    .status-toggle .dots {
+      display: flex;
+      gap: 4px;
+    }
+
+    .status-toggle .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--dim);
+    }
+
+    /* 상태 패널 (펼침) */
+    .api-status-group {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      padding: 0 16px 14px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .api-status-group.open {
+      display: flex;
     }
 
     .status-badge {
       display: flex;
       align-items: center;
-      gap: 6px;
-      font-size: 11px;
+      gap: 8px;
+      font-size: 12px;
       font-family: 'JetBrains Mono', monospace;
-      padding: 5px 12px;
-      border-radius: 20px;
+      padding: 9px 14px;
+      border-radius: 10px;
       border: 1px solid var(--border);
       background: var(--surface2);
       color: var(--muted);
@@ -102,89 +148,81 @@
     .status-badge::before {
       content: '';
       display: block;
-      width: 6px;
-      height: 6px;
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
       background: var(--dim);
-    }
-
-    .badge-kakao.on {
-      border-color: rgba(0, 229, 160, .4);
-      background: rgba(0, 229, 160, .08);
-      color: var(--accent);
-    }
-
-    .badge-kakao.on::before {
-      background: var(--accent);
-      box-shadow: 0 0 6px var(--accent);
-    }
-
-    .badge-portal.on {
-      border-color: rgba(255, 255, 255, .4);
-      background: rgba(255, 255, 255, .08);
-      color: #fff;
-    }
-
-    .badge-portal.on::before {
-      background: #fff;
-      box-shadow: 0 0 6px #fff;
-    }
-
-    .badge-wfs.on {
-      border-color: rgba(255, 208, 96, .4);
-      background: rgba(255, 208, 96, .08);
-      color: var(--yellow);
-    }
-
-    .badge-wfs.on::before {
-      background: var(--yellow);
-      box-shadow: 0 0 6px var(--yellow);
-    }
-
-    .status-badge.err {
-      border-color: rgba(255, 90, 90, .4);
-      background: rgba(255, 90, 90, .08);
-      color: var(--warn);
-    }
-
-    .status-badge.err::before {
-      background: var(--warn);
-      box-shadow: 0 0 6px var(--warn);
-    }
-
-    .container {
-      display: flex;
-      flex: 1;
-      overflow: hidden;
-      min-height: 0;
-    }
-
-    .sidebar {
-      width: 360px;
-      background: var(--surface);
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
       flex-shrink: 0;
-      overflow: hidden;
     }
 
-    .sb-section {
-      padding: 24px;
+    .badge-kakao.on { border-color: rgba(0,229,160,.4); background: rgba(0,229,160,.08); color: var(--accent); }
+    .badge-kakao.on::before { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+    .badge-portal.on { border-color: rgba(255,255,255,.4); background: rgba(255,255,255,.08); color: #fff; }
+    .badge-portal.on::before { background: #fff; box-shadow: 0 0 6px #fff; }
+    .badge-wfs.on { border-color: rgba(255,208,96,.4); background: rgba(255,208,96,.08); color: var(--yellow); }
+    .badge-wfs.on::before { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
+    .status-badge.err { border-color: rgba(255,90,90,.4); background: rgba(255,90,90,.08); color: var(--warn); }
+    .status-badge.err::before { background: var(--warn); box-shadow: 0 0 6px var(--warn); }
+
+    /* 헤더 상단 미니 점 색상 동기화 */
+    .mini.on-kakao { background: var(--accent) !important; box-shadow: 0 0 5px var(--accent); }
+    .mini.on-portal { background: #fff !important; box-shadow: 0 0 5px #fff; }
+    .mini.on-wfs { background: var(--yellow) !important; box-shadow: 0 0 5px var(--yellow); }
+    .mini.err { background: var(--warn) !important; box-shadow: 0 0 5px var(--warn); }
+
+    /* ─────────── 콘텐츠 영역 ─────────── */
+    .scroll-area {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+    }
+
+    /* API 키 설정 (접이식) */
+    .settings {
       border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .settings-head {
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .settings-head .chev {
+      margin-left: auto;
+      transition: transform .25s;
+    }
+
+    .settings.open .settings-head .chev {
+      transform: rotate(180deg);
+    }
+
+    .settings-body {
+      display: none;
+      flex-direction: column;
+      gap: 14px;
+      padding: 0 16px 18px;
+    }
+
+    .settings.open .settings-body {
+      display: flex;
     }
 
     .input-group {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 7px;
     }
 
     .field-label {
-      font-size: 11px;
+      font-size: 12px;
       color: var(--muted);
     }
 
@@ -195,145 +233,45 @@
     }
 
     .help-link {
-      font-size: 11px;
+      font-size: 12px;
       color: var(--accent2);
       text-decoration: none;
-      transition: opacity .2s;
-    }
-
-    .help-link:hover {
-      opacity: .8;
-      text-decoration: underline;
     }
 
     .field-input {
       width: 100%;
       background: var(--surface2);
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: 12px;
       color: var(--text);
-      padding: 12px 14px;
-      font-size: 13px;
+      padding: 14px 16px;
+      font-size: 16px; /* iOS 자동 줌 방지 */
       outline: none;
       transition: border-color .2s;
     }
 
-    .field-input:focus {
-      border-color: var(--accent2);
-    }
+    .field-input:focus { border-color: var(--accent2); }
+    .field-input::placeholder { color: var(--dim); }
 
-    .field-input::placeholder {
-      color: var(--dim);
-    }
-
-    .search-row {
-      display: flex;
-      gap: 8px;
-    }
-
-    .search-btn {
-      background: var(--accent);
-      color: #000;
-      border: none;
-      border-radius: 8px;
-      padding: 0 18px;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: opacity .2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      white-space: nowrap;
-    }
-
-    .search-btn:hover {
-      opacity: .85;
-    }
-
-    .search-btn:disabled {
-      opacity: .5;
-      cursor: not-allowed;
-    }
-
-    .addr-results {
-      flex: 1;
-      overflow-y: auto;
-      padding: 0 24px 24px;
-    }
-
-    .addr-item {
-      padding: 14px 16px;
-      cursor: pointer;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      margin-top: 10px;
-      background: var(--surface2);
-      transition: all .2s;
-    }
-
-    .addr-item:hover {
-      border-color: var(--accent);
-      background: rgba(0, 229, 160, .05);
-      transform: translateY(-1px);
-    }
-
-    .addr-main {
-      font-size: 13px;
-      color: var(--text);
-      font-weight: 500;
-      margin-bottom: 4px;
-    }
-
-    .addr-sub {
-      font-size: 11px;
-      color: var(--muted);
-    }
-
-    .addr-type {
-      font-size: 9px;
-      padding: 2px 6px;
-      border-radius: 4px;
-      margin-right: 6px;
-      font-weight: 700;
-    }
-
-    .addr-type.road {
-      background: rgba(0, 150, 255, .15);
-      color: var(--accent2);
-      border: 1px solid rgba(0, 150, 255, .3);
-    }
-
-    .addr-type.jibun {
-      background: rgba(255, 208, 96, .15);
-      color: var(--yellow);
-      border: 1px solid rgba(255, 208, 96, .3);
-    }
-
-    .main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      background: var(--bg);
-      min-height: 0;
-    }
-
+    /* 탭바 */
     .tab-bar {
       display: flex;
       border-bottom: 1px solid var(--border);
       background: var(--surface);
-      padding: 0 24px;
-      gap: 4px;
-      flex-shrink: 0;
+      position: sticky;
+      top: 0;
+      z-index: 20;
     }
 
     .tab-btn {
-      padding: 14px 18px;
+      flex: 1;
+      padding: 14px 8px;
       font-size: 13px;
       color: var(--muted);
       cursor: pointer;
       border-bottom: 2px solid transparent;
       transition: all .2s;
+      text-align: center;
     }
 
     .tab-btn.active {
@@ -342,89 +280,60 @@
       font-weight: 700;
     }
 
+    /* 외부링크 - 가로 스크롤 칩 */
     .external-links {
-      margin-left: auto;
       display: none;
-      align-items: center;
-      gap: 6px;
+      gap: 8px;
+      padding: 12px 16px;
+      overflow-x: auto;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      -webkit-overflow-scrolling: touch;
     }
 
+    .external-links::-webkit-scrollbar { display: none; }
+
     .external-link-btn {
-      padding: 8px 12px;
-      font-size: 12px;
+      padding: 10px 14px;
+      font-size: 13px;
       font-weight: 600;
       text-decoration: none;
       display: flex;
       align-items: center;
       gap: 4px;
-      border-radius: 6px;
+      border-radius: 22px;
       border: 1px solid var(--border);
       background: var(--surface2);
-      transition: all .2s;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
-    .external-link-btn.molit {
-      color: var(--accent2);
-    }
+    .external-link-btn.molit { color: var(--accent2); }
+    .external-link-btn.naver { color: #00e56e; }
+    .external-link-btn.eum { color: #ffb84d; }
 
-    .external-link-btn.molit:hover {
-      background: rgba(0, 150, 255, .1);
-      border-color: rgba(0, 150, 255, .3);
-    }
-
-    .external-link-btn.naver {
-      color: #00e56e;
-    }
-
-    .external-link-btn.naver:hover {
-      background: rgba(0, 229, 110, .1);
-      border-color: rgba(0, 229, 110, .3);
-    }
-
-    /* ▼ 추가할 부분 ▼ */
-    .external-link-btn.eum {
-      color: #ffb84d;
-    }
-
-    .external-link-btn.eum:hover {
-      background: rgba(255, 184, 77, .1);
-      border-color: rgba(255, 184, 77, .3);
-    }
-
-    .tab-panels {
-      flex: 1;
-      overflow: hidden;
-      min-height: 0;
-      display: flex;
-      flex-direction: column;
-    }
-
+    /* 패널 */
     .tab-panel {
-      flex: 1;
-      overflow-y: auto;
-      padding: 32px;
-      padding-bottom: 80px;
+      padding: 16px;
+      padding-bottom: calc(120px + var(--safe-bottom));
       display: none;
       flex-direction: column;
-      gap: 20px;
-      min-height: 0;
+      gap: 16px;
     }
 
-    .tab-panel.active {
-      display: flex;
-    }
+    .tab-panel.active { display: flex; }
 
+    /* 데이터 카드 */
     .data-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 14px;
       overflow: hidden;
-      flex-shrink: 0;
     }
 
     .card-header {
       background: var(--surface2);
-      padding: 14px 20px;
+      padding: 14px 16px;
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
@@ -432,148 +341,259 @@
     }
 
     .card-header h3 {
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 700;
       color: var(--accent2);
     }
 
+    /* 모바일: 2열 그리드 */
     .field-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      grid-template-columns: 1fr 1fr;
       gap: 1px;
       background: var(--border);
     }
 
     .field-cell {
       background: var(--surface);
-      padding: 16px 20px;
+      padding: 14px 16px;
     }
 
     .fc-label {
       font-size: 11px;
       color: var(--muted);
       margin-bottom: 6px;
+      line-height: 1.4;
     }
 
     .fc-val {
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 600;
       word-break: keep-all;
+      line-height: 1.4;
     }
 
-    .src-bldg {
-      color: var(--text);
-    }
-
-    .src-vworld {
-      color: var(--yellow);
-    }
-
-    .fc-val.dim {
-      color: var(--dim);
-      font-weight: 400;
-    }
+    .src-bldg { color: var(--text); }
+    .src-vworld { color: var(--yellow); }
+    .fc-val.dim { color: var(--dim); font-weight: 400; }
 
     pre.json-view {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 20px;
+      border-radius: 14px;
+      padding: 16px;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 12px;
+      font-size: 11px;
       line-height: 1.7;
       overflow-x: auto;
       white-space: pre-wrap;
+      word-break: break-all;
     }
 
-    .j-key {
-      color: #7ec8e3;
-    }
-
-    .j-str {
-      color: #a8e6a3;
-    }
-
-    .j-num {
-      color: var(--yellow);
-    }
+    .j-key { color: #7ec8e3; }
+    .j-str { color: #a8e6a3; }
+    .j-num { color: var(--yellow); }
 
     .notice-box {
-      border-radius: 10px;
-      padding: 24px;
+      border-radius: 14px;
+      padding: 28px 20px;
       border: 1px solid;
       text-align: center;
     }
 
-    .notice-box.empty {
-      background: rgba(107, 117, 137, .05);
-      border-color: var(--border);
-      color: var(--muted);
-    }
+    .notice-box.empty { background: rgba(107,117,137,.05); border-color: var(--border); color: var(--muted); }
+    .notice-box.info { background: rgba(0,150,255,.05); border-color: rgba(0,150,255,.3); }
+    .notice-box.err { background: rgba(255,90,90,.05); border-color: rgba(255,90,90,.3); }
 
-    .notice-box.info {
-      background: rgba(0, 150, 255, .05);
-      border-color: rgba(0, 150, 255, .3);
-    }
-
-    .notice-box.err {
-      background: rgba(255, 90, 90, .05);
-      border-color: rgba(255, 90, 90, .3);
-    }
-
-    .notice-title {
-      font-size: 15px;
-      font-weight: 700;
-      margin-bottom: 10px;
-    }
-
-    .notice-desc {
-      font-size: 13px;
-      line-height: 1.6;
-      color: var(--muted);
-    }
-
-    ::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: var(--dim);
-      border-radius: 6px;
-    }
+    .notice-title { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+    .notice-desc { font-size: 13px; line-height: 1.6; color: var(--muted); }
 
     .map-container {
       width: 100%;
-      height: 520px;
-      border-radius: 12px;
+      height: 360px;
+      border-radius: 0 0 14px 14px;
       overflow: hidden;
-      border: 1px solid var(--border);
       background: var(--surface2);
+    }
+
+    /* ─────────── 검색결과 시트 (하단 슬라이드업) ─────────── */
+    .sheet-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.55);
+      z-index: 90;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .25s;
+    }
+
+    .sheet-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .result-sheet {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 100;
+      background: var(--surface);
+      border-radius: 20px 20px 0 0;
+      border-top: 1px solid var(--border);
+      max-height: 72vh;
+      display: flex;
+      flex-direction: column;
+      transform: translateY(110%);
+      transition: transform .3s cubic-bezier(.32,.72,0,1);
+      padding-bottom: var(--safe-bottom);
+    }
+
+    .result-sheet.open {
+      transform: translateY(0);
+    }
+
+    .sheet-handle {
+      padding: 12px 0 8px;
+      display: flex;
+      justify-content: center;
       flex-shrink: 0;
     }
+
+    .sheet-handle::before {
+      content: '';
+      width: 40px;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--dim);
+    }
+
+    .sheet-title {
+      padding: 0 20px 12px;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sheet-close {
+      margin-left: auto;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--surface2);
+      border: none;
+      color: var(--muted);
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .addr-results {
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 12px 16px 20px;
+    }
+
+    .addr-item {
+      padding: 16px;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-top: 10px;
+      background: var(--surface2);
+      transition: all .15s;
+    }
+
+    .addr-item:first-child { margin-top: 0; }
+    .addr-item:active { border-color: var(--accent); background: rgba(0,229,160,.08); }
+
+    .addr-main {
+      font-size: 14px;
+      color: var(--text);
+      font-weight: 500;
+      margin-bottom: 4px;
+      line-height: 1.4;
+    }
+
+    .addr-sub { font-size: 12px; color: var(--muted); }
+
+    .addr-type {
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 5px;
+      margin-right: 6px;
+      font-weight: 700;
+    }
+
+    .addr-type.road { background: rgba(0,150,255,.15); color: var(--accent2); border: 1px solid rgba(0,150,255,.3); }
+    .addr-type.jibun { background: rgba(255,208,96,.15); color: var(--yellow); border: 1px solid rgba(255,208,96,.3); }
+
+    /* ─────────── 하단 고정 검색바 ─────────── */
+    .search-dock {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 60;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 12px 16px calc(12px + var(--safe-bottom));
+      display: flex;
+      gap: 10px;
+    }
+
+    .search-dock .field-input {
+      flex: 1;
+      border-radius: 24px;
+    }
+
+    .search-btn {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: 24px;
+      padding: 0 22px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .search-btn:active { opacity: .8; }
+    .search-btn:disabled { opacity: .5; }
+
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--dim); border-radius: 5px; }
 
     .spinner {
       width: 18px;
       height: 18px;
-      border: 2px solid rgba(10, 12, 16, .4);
+      border: 2px solid rgba(10,12,16,.4);
       border-top-color: #0a0c10;
       border-radius: 50%;
       animation: spin .6s linear infinite;
     }
 
     .spinner.light {
-      border-color: rgba(255, 255, 255, .2);
+      border-color: rgba(255,255,255,.2);
       border-top-color: #fff;
     }
 
-    @keyframes spin {
-      to {
-        transform: rotate(360deg);
-      }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* 큰 화면일 때 그리드 확장 */
+    @media (min-width: 600px) {
+      .field-grid { grid-template-columns: repeat(3, 1fr); }
+      .search-dock, .result-sheet, .sheet-backdrop { max-width: 480px; margin: 0 auto; }
     }
   </style>
 </head>
@@ -583,69 +603,88 @@
   <header>
     <div class="logo-mark">🏢</div>
     <div class="logo-text">
-      <h1>건축물대장 통합 조회 v1.0</h1>
-      <p>sazk-han</p>
+      <h1>건축물대장 통합 조회</h1>
+      <p>sazk-han · v1.0</p>
     </div>
-    <div class="api-status-group">
-      <div id="statusKakao" class="status-badge badge-kakao">Kakao</div>
-      <div id="statusPortal" class="status-badge badge-portal">건축물대장</div>
-      <div id="statusWfs" class="status-badge badge-wfs">VWorld WFS</div>
+    <div class="status-toggle" onclick="toggleStatus()">
+      <span>API</span>
+      <div class="dots">
+        <span class="dot mini" id="miniKakao"></span>
+        <span class="dot mini" id="miniPortal"></span>
+        <span class="dot mini" id="miniWfs"></span>
+      </div>
     </div>
   </header>
 
-  <div class="container">
-    <div class="sidebar">
-      <div class="sb-section">
-        <div class="input-group">
-          <div class="label-row">
-            <label class="field-label">Kakao REST API Key</label>
-            <a href="https://developers.kakao.com/docs/ko/tutorial/start" target="_blank" class="help-link">key 생성하기
-              ↗</a>
-          </div>
-          <input class="field-input" id="kakaoKey" type="password" placeholder="발급받은 키를 입력하세요"
-            oninput="checkKakaoKey()" />
-        </div>
-        <div class="input-group">
-          <label class="field-label">Kakao JavaScript Key (지도용)</label>
-          <input class="field-input" id="kakaoJsKey" type="password" placeholder="JavaScript 앱 키를 입력하세요"
-            oninput="checkKakaoKey()" />
-        </div>
-        <div class="input-group" style="margin-top:4px;">
-          <label class="field-label">도로명 또는 지번 주소</label>
-          <div class="search-row">
-            <input class="field-input" id="addrInput" placeholder="예: 잠실동 40 / 올림픽로 240"
-              onkeydown="if(event.key==='Enter')searchAddr()" />
-            <button class="search-btn" id="searchBtn" onclick="searchAddr()">
-              <span id="btnText">검색</span>
-            </button>
-          </div>
-        </div>
-      </div>
-      <div class="addr-results" id="addrResults"></div>
-    </div>
+  <div class="api-status-group" id="statusGroup">
+    <div id="statusKakao" class="status-badge badge-kakao">Kakao 주소 검색</div>
+    <div id="statusPortal" class="status-badge badge-portal">건축물대장 (공공데이터)</div>
+    <div id="statusWfs" class="status-badge badge-wfs">VWorld WFS 용도지역</div>
+  </div>
 
-    <div class="main">
-      <div class="tab-bar">
-        <div class="tab-btn active" onclick="switchTab('result')" id="tab-result">📊 통합 데이터</div>
-        <div class="tab-btn" onclick="switchTab('raw')" id="tab-raw">📄 Raw JSON</div>
-        <div class="external-links" id="externalLinks">
-          <a href="https://rt.molit.go.kr/pt/gis/gis.do?srhThingSecd=A&mobileAt=" target="_blank"
-            class="external-link-btn molit">🏛️ 국토부실거래가 ↗</a>
-          <a href="#" target="_blank" rel="noopener noreferrer" class="external-link-btn naver" id="naverBtn">🟢 네이버실거래가
-            ↗</a>
-          <a href="#" target="_blank" rel="noopener noreferrer" class="external-link-btn eum" id="eumBtn">🗺️ 토지이음 ↗</a>
+  <!-- API 키 설정 (접이식) -->
+  <div class="settings" id="settings">
+    <div class="settings-head" onclick="toggleSettings()">
+      🔑 <span>API 키 설정</span>
+      <span class="chev">▾</span>
+    </div>
+    <div class="settings-body">
+      <div class="input-group">
+        <div class="label-row">
+          <label class="field-label">Kakao REST API Key</label>
+          <a href="https://developers.kakao.com/docs/ko/tutorial/start" target="_blank" class="help-link">key 생성 ↗</a>
         </div>
+        <input class="field-input" id="kakaoKey" type="password" placeholder="발급받은 키를 입력하세요" oninput="checkKakaoKey()" />
       </div>
-      <div class="tab-panels">
-        <div class="tab-panel active" id="panel-result">
-          <div class="notice-box empty" style="margin:auto;">
-            <div class="notice-title" style="color:#fff;">✅ 건축물 정보 확인</div>
-            <div class="notice-desc" style="color:#fff;">좌측에서 주소를 검색하고 항목을 클릭</div>
-          </div>
-        </div>
-        <div class="tab-panel" id="panel-raw"></div>
+      <div class="input-group">
+        <label class="field-label">Kakao JavaScript Key (지도용)</label>
+        <input class="field-input" id="kakaoJsKey" type="password" placeholder="JavaScript 앱 키를 입력하세요" oninput="checkKakaoKey()" />
       </div>
     </div>
+  </div>
+
+  <!-- 탭바 -->
+  <div class="tab-bar">
+    <div class="tab-btn active" onclick="switchTab('result')" id="tab-result">📊 통합 데이터</div>
+    <div class="tab-btn" onclick="switchTab('raw')" id="tab-raw">📄 Raw JSON</div>
+  </div>
+
+  <!-- 외부링크 칩 -->
+  <div class="external-links" id="externalLinks">
+    <a href="https://rt.molit.go.kr/pt/gis/gis.do?srhThingSecd=A&mobileAt=" target="_blank" class="external-link-btn molit">🏛️ 국토부 실거래가</a>
+    <a href="#" target="_blank" rel="noopener noreferrer" class="external-link-btn naver" id="naverBtn">🟢 네이버 실거래가</a>
+    <a href="#" target="_blank" rel="noopener noreferrer" class="external-link-btn eum" id="eumBtn">🗺️ 토지이음</a>
+  </div>
+
+  <!-- 콘텐츠 -->
+  <div class="scroll-area">
+    <div class="tab-panel active" id="panel-result">
+      <div class="notice-box empty" style="margin:auto;">
+        <div class="notice-title" style="color:#fff;">✅ 건축물 정보 확인</div>
+        <div class="notice-desc" style="color:#fff;">하단 검색창에 주소를 입력하고 결과를 선택하세요</div>
+      </div>
+    </div>
+    <div class="tab-panel" id="panel-raw"></div>
+  </div>
+
+  <!-- 하단 고정 검색바 -->
+  <div class="search-dock">
+    <input class="field-input" id="addrInput" placeholder="잠실동 40 / 올림픽로 240"
+      onkeydown="if(event.key==='Enter')searchAddr()" />
+    <button class="search-btn" id="searchBtn" onclick="searchAddr()">
+      <span id="btnText">검색</span>
+    </button>
+  </div>
+
+  <!-- 검색결과 시트 -->
+  <div class="sheet-backdrop" id="sheetBackdrop" onclick="closeSheet()"></div>
+  <div class="result-sheet" id="resultSheet">
+    <div class="sheet-handle" onclick="closeSheet()"></div>
+    <div class="sheet-title">
+      📍 검색 결과
+      <button class="sheet-close" onclick="closeSheet()">✕</button>
+    </div>
+    <div class="addr-results" id="addrResults"></div>
   </div>
 
   <script>
@@ -673,11 +712,6 @@
     const WFS_URL = 'https://vworld-proxy-vercel.vercel.app/api/vworld';
     const WFS_MAX = '&maxFeatures=1';
 
-    // ═══════════════════════════════════════════════════════════
-    //  VWorld WFS 레이어 정의
-    //  ✅ 공식 스키마 확인 완료: 모든 레이어 용도명 속성키 = uname
-    //  ❌ lt_c_ud101/201/301/401 은 VWorld WFS 미제공 → 제외
-    // ═══════════════════════════════════════════════════════════
     const WFS_ZONING_LAYERS = [
       { typeName: 'lt_c_uq111', label: '도시지역' },
       { typeName: 'lt_c_uq112', label: '관리지역' },
@@ -702,9 +736,6 @@
       { key: 'mainBldCnt', label: '주건축물수' },
     ];
 
-    // ═══════════════════════════════════════════════════════════
-    //  모듈 상태
-    // ═══════════════════════════════════════════════════════════
     let _addrDocs = [];
     let _lastRawData = null;
     let _subItems = [];
@@ -715,7 +746,7 @@
     let _kakaoSdkKey = null;
 
     // ═══════════════════════════════════════════════════════════
-    //  초기화
+    //  초기화 & UI 토글
     // ═══════════════════════════════════════════════════════════
     document.addEventListener('DOMContentLoaded', () => {
       const savedRest = localStorage.getItem('kakao_key') || APP_CONFIG.DEFAULT_KAKAO_REST;
@@ -723,14 +754,42 @@
       if (savedRest) document.getElementById('kakaoKey').value = savedRest;
       if (savedJs) document.getElementById('kakaoJsKey').value = savedJs;
       checkKakaoKey();
+      // 키가 없으면 설정 패널 자동 펼침
+      if (!savedRest) document.getElementById('settings').classList.add('open');
     });
+
+    function toggleStatus() {
+      document.getElementById('statusGroup').classList.toggle('open');
+    }
+    function toggleSettings() {
+      document.getElementById('settings').classList.toggle('open');
+    }
+    function openSheet() {
+      document.getElementById('resultSheet').classList.add('open');
+      document.getElementById('sheetBackdrop').classList.add('open');
+    }
+    function closeSheet() {
+      document.getElementById('resultSheet').classList.remove('open');
+      document.getElementById('sheetBackdrop').classList.remove('open');
+    }
 
     function checkKakaoKey() {
       const key = document.getElementById('kakaoKey').value.trim();
       const jsKey = document.getElementById('kakaoJsKey').value.trim();
-      document.getElementById('statusKakao').classList.toggle('on', key.length > 10);
+      const on = key.length > 10;
+      document.getElementById('statusKakao').classList.toggle('on', on);
+      document.getElementById('miniKakao').classList.toggle('on-kakao', on);
       if (key.length > 10) localStorage.setItem('kakao_key', key);
       if (jsKey.length > 10) localStorage.setItem('kakao_js_key', jsKey);
+    }
+
+    // 상태 미니닷 동기화 헬퍼
+    function syncMini() {
+      document.getElementById('miniKakao').classList.toggle('on-kakao', document.getElementById('statusKakao').classList.contains('on'));
+      const p = document.getElementById('statusPortal');
+      document.getElementById('miniPortal').classList.toggle('on-portal', p.classList.contains('on'));
+      document.getElementById('miniPortal').classList.toggle('err', p.classList.contains('err'));
+      document.getElementById('miniWfs').classList.toggle('on-wfs', document.getElementById('statusWfs').classList.contains('on'));
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -739,11 +798,13 @@
     async function searchAddr() {
       const key = document.getElementById('kakaoKey').value.trim();
       const query = document.getElementById('addrInput').value.trim();
-      if (!key) return alert('Kakao REST API Key를 입력해주세요.');
+      if (!key) { document.getElementById('settings').classList.add('open'); return alert('Kakao REST API Key를 입력해주세요.'); }
       if (!query) return alert('주소를 입력해주세요.');
 
       setSearchLoading(true);
       const resultsEl = document.getElementById('addrResults');
+      resultsEl.innerHTML = '';
+      openSheet();
 
       try {
         const headers = { Authorization: `KakaoAK ${key}` };
@@ -793,12 +854,12 @@
 
         _addrDocs = uniqueDocs;
         if (_addrDocs.length === 0) {
-          resultsEl.innerHTML = `<div style="padding:20px;color:var(--warn);font-size:13px;text-align:center;">검색 결과 없음</div>`;
+          resultsEl.innerHTML = `<div style="padding:30px 20px;color:var(--warn);font-size:14px;text-align:center;">검색 결과 없음</div>`;
           return;
         }
         renderAddrList(_addrDocs);
       } catch (e) {
-        resultsEl.innerHTML = `<div style="padding:20px;color:var(--warn);font-size:13px;">⚠️ 검색 오류: ${e.message}</div>`;
+        resultsEl.innerHTML = `<div style="padding:20px;color:var(--warn);font-size:14px;">⚠️ 검색 오류: ${e.message}</div>`;
       } finally {
         setSearchLoading(false);
       }
@@ -813,7 +874,7 @@
         const hasRoad = !!roadNm;
         return `<div class="addr-item" onclick="handleAddrSelect(${idx})">
       ${isKeyword ? `<div class="addr-main" style="color:var(--accent2);margin-bottom:6px;">${placeNm}</div>` : ''}
-      <div class="addr-main" style="${isKeyword ? 'font-size:11px;font-weight:400;' : ''}">
+      <div class="addr-main" style="${isKeyword ? 'font-size:12px;font-weight:400;' : ''}">
         <span class="addr-type ${hasRoad ? 'road' : 'jibun'}">${hasRoad ? '도로명' : '지번'}</span>
         ${hasRoad ? roadNm : jibunNm}
       </div>
@@ -830,11 +891,7 @@
 
     // ═══════════════════════════════════════════════════════════
     //  2. VWorld WFS 통신
-    //  ✅ uname 단일 고정 파싱 (공식 스키마 확인 완료)
     // ═══════════════════════════════════════════════════════════
-
-    /** WFS BBOX URL 생성 */
-    /** 🌟 1. 환경별 키/도메인 분기 및 CQL 필터링 적용 */
     function buildWfsUrl(typeName, lng, lat) {
       const isLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
       const apiKey = isLocal ? APP_CONFIG.VWORLD_LOCAL_KEY : APP_CONFIG.VWORLD_PROD_KEY;
@@ -843,17 +900,14 @@
       return `${WFS_URL}?endpoint=wfs&SERVICE=WFS&VERSION=1.1.0&REQUEST=GetFeature` +
         `&TYPENAME=${typeName}` +
         `&SRSNAME=EPSG:4326` +
-        // 🌟 POINT(경도 위도) 순서로 작성되어 BBOX의 순서 꼬임 문제가 해결됩니다
         `&CQL_FILTER=INTERSECTS(geom,POINT(${lng}%20${lat}))` +
         `&outputFormat=application%2Fjson&maxFeatures=1` +
         `&key=${apiKey}&domain=${domain}`;
     }
 
-    /** 🌟 2. 용도지역만 단독 조회 (불필요한 구역 조회 삭제) */
     async function fetchWfsZoning(lng, lat) {
       const wfsBadge = document.getElementById('statusWfs');
 
-      // 5개 레이어 동시 요청
       const zoningFetches = WFS_ZONING_LAYERS.map(layer =>
         fetch(buildWfsUrl(layer.typeName, lng, lat))
           .then(r => r.ok ? r.json() : null)
@@ -868,7 +922,6 @@
         const json = settled.value;
         if ((json?.features?.length ?? 0) === 0) continue;
 
-        // 제공해주신 성공 코드의 유연한 속성 파싱 방식 적용
         const props = json.features[0].properties || {};
         const nameProp = props.uname || props.prposArea1Nm || props.uq_nm || props.ud_nm || props.uq111_nm || props.zone_nm || props.name;
 
@@ -877,14 +930,12 @@
 
       const hasData = !!area1Str;
       wfsBadge.className = `status-badge badge-wfs ${hasData ? 'on' : ''}`;
+      syncMini();
 
       console.log('[WFS] 대표 용도지역 결과:', area1Str || '없음');
       return { area1Str: area1Str || '—' };
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  2-1. VWorld WFS 건축물정보 (lt_c_bldginfo)
-    // ═══════════════════════════════════════════════════════════
     async function fetchWfsBldgInfo(lng, lat) {
       const url = buildWfsUrl('lt_c_bldginfo', lng, lat);
       try {
@@ -906,6 +957,9 @@
       const lng = parseFloat(doc.x);
       const lat = parseFloat(doc.y);
       const key = document.getElementById('kakaoKey').value.trim();
+
+      closeSheet();
+      switchTab('result');
 
       const externalLinks = document.getElementById('externalLinks');
       const naverBtn = document.getElementById('naverBtn');
@@ -951,7 +1005,6 @@
       const pnuLandType = addrObj.mountain_yn === 'Y' ? '2' : '1';
       const PNU = bCode + pnuLandType + bun + ji;
       eumBtn.href = `https://www.eum.go.kr/web/ar/lu/luLandDet.jsp?isNoScr=script&mode=search&pnu=${PNU}`;
-      // ▲ 추가 끝 ▲
       const base = `ServiceKey=${APP_CONFIG.SERVICE_KEY}&sigunguCd=${sigunguCd}&bjdongCd=${bjdongCd}&platGbCd=${platGbCd}&bun=${bun}&ji=${ji}&_type=json`;
 
       const urlRecap = `${BASE_API_URL}/getBrRecapTitleInfo?${base}&numOfRows=10&pageNo=1`;
@@ -1044,16 +1097,12 @@
             const isEmptyDate = !r.useAprDay || typeof r.useAprDay === 'object' || String(r.useAprDay).trim() === '';
             if (isEmptyDate && useAprDay) r.useAprDay = useAprDay;
 
-            // 건축물대장 표제부에 이미 '제3종일반주거지역' 같은 값이 있다면 유지하고, 없을 때만 VWorld 값 적용
-            // 건축물대장에 값이 비어있을 때만 VWorld 용도지역 값을 가져옴
             if (isBldgEmpty('prposArea1Nm', r.prposArea1Nm) && zoningResult.area1Str !== '—') {
               r.prposArea1Nm = zoningResult.area1Str;
               r._source['prposArea1Nm'] = 'vworld';
             } else {
               r.prposArea1Nm = r.prposArea1Nm || '—';
             }
-
-            // 용도지구(prposArea2Nm) 처리 로직은 화면에서 지웠으므로 완전히 삭제합니다.
 
             if (wfsBldgProps) {
               const mapWfs = {
@@ -1089,6 +1138,7 @@
         if (!isVWorldOnly && _lastRawData?.response?.header?.resultCode === '00') {
           portalBadge.classList.add('on'); portalBadge.classList.remove('err');
         } else { portalBadge.classList.remove('on'); }
+        syncMini();
 
         _lastCoords = { lat, lng };
         renderActiveView();
@@ -1096,6 +1146,7 @@
       } catch (e) {
         document.getElementById('statusPortal').classList.remove('on');
         document.getElementById('statusPortal').classList.add('err');
+        syncMini();
         document.getElementById('panel-result').innerHTML =
           `<div class="notice-box err" style="margin:auto;">
         <div class="notice-title">⚠️ 데이터 호출 오류</div>
@@ -1148,6 +1199,7 @@
           _mapInstance = new kakao.maps.Map(container, { center: latlng, level: 3 });
           new kakao.maps.Marker({ position: latlng, map: _mapInstance });
         }
+        setTimeout(() => { if (_mapInstance) _mapInstance.relayout(); _mapInstance && _mapInstance.setCenter(latlng); }, 200);
       } catch (e) { console.warn('카카오맵 로드 실패:', e); }
     }
 
@@ -1202,15 +1254,15 @@
         let alertBanner = '';
         if (isRecap && _subItems.length > 0) {
           alertBanner = `
-        <div style="background:rgba(0,150,255,.08);padding:12px 20px;font-size:12px;color:var(--accent2);border-bottom:1px solid var(--border);line-height:1.5;">
-          💡 <b>안내:</b> 현재 카드는 단지 전체(총괄) 정보입니다. 특정 부속 건물 상세 스펙은 하단 <b>[📋 동별 상세 정보]</b>를 확인해주세요.
+        <div style="background:rgba(0,150,255,.08);padding:12px 16px;font-size:12px;color:var(--accent2);border-bottom:1px solid var(--border);line-height:1.5;">
+          💡 <b>안내:</b> 현재 카드는 단지 전체(총괄) 정보입니다. 부속 건물 상세는 하단 <b>[📋 동별 상세 정보]</b>를 확인하세요.
         </div>`;
         }
 
         html += `<div class="data-card">
       <div class="card-header">
         <h3>${item.bldNm || '단지명 없음'}</h3>
-        <span style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;">건축물 #${idx + 1}</span>
+        <span style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;">#${idx + 1}</span>
       </div>
       ${alertBanner}
       <div class="field-grid">`;
@@ -1230,7 +1282,7 @@
             const src = item._source?.[guide.key];
             if (src === 'vworld') {
               colorClass = 'src-vworld';
-              sourceBadge = '<span style="font-size:10px;color:var(--yellow);opacity:.8;margin-left:4px;">(VWorld)</span>';
+              sourceBadge = '<span style="font-size:10px;color:var(--yellow);opacity:.8;margin-left:4px;">(VW)</span>';
             } else if (src === '표제부') {
               colorClass = 'src-bldg';
               sourceBadge = '<span style="font-size:10px;color:var(--accent2);opacity:.8;margin-left:4px;">(표제부)</span>';
@@ -1283,7 +1335,7 @@
       <div class="data-card">
         <div class="card-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'" style="cursor:pointer;">
           <h3>📋 동별 상세 정보</h3>
-          <span style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;">${_subItems.length}개 동 ▼ 클릭하여 펼치기</span>
+          <span style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;">${_subItems.length}개 동 ▼</span>
         </div>
         <div style="display:none;">`;
 
