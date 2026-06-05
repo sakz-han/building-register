@@ -3,7 +3,8 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#0a0c10" />
   <title>건축물대장 통합 조회 v1.0</title>
   <link rel="icon" href="data:,">
@@ -34,7 +35,8 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    html, body {
+    html,
+    body {
       overscroll-behavior-y: none;
     }
 
@@ -155,20 +157,70 @@
       flex-shrink: 0;
     }
 
-    .badge-kakao.on { border-color: rgba(0,229,160,.4); background: rgba(0,229,160,.08); color: var(--accent); }
-    .badge-kakao.on::before { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
-    .badge-portal.on { border-color: rgba(255,255,255,.4); background: rgba(255,255,255,.08); color: #fff; }
-    .badge-portal.on::before { background: #fff; box-shadow: 0 0 6px #fff; }
-    .badge-wfs.on { border-color: rgba(255,208,96,.4); background: rgba(255,208,96,.08); color: var(--yellow); }
-    .badge-wfs.on::before { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
-    .status-badge.err { border-color: rgba(255,90,90,.4); background: rgba(255,90,90,.08); color: var(--warn); }
-    .status-badge.err::before { background: var(--warn); box-shadow: 0 0 6px var(--warn); }
+    .badge-kakao.on {
+      border-color: rgba(0, 229, 160, .4);
+      background: rgba(0, 229, 160, .08);
+      color: var(--accent);
+    }
+
+    .badge-kakao.on::before {
+      background: var(--accent);
+      box-shadow: 0 0 6px var(--accent);
+    }
+
+    .badge-portal.on {
+      border-color: rgba(255, 255, 255, .4);
+      background: rgba(255, 255, 255, .08);
+      color: #fff;
+    }
+
+    .badge-portal.on::before {
+      background: #fff;
+      box-shadow: 0 0 6px #fff;
+    }
+
+    .badge-wfs.on {
+      border-color: rgba(255, 208, 96, .4);
+      background: rgba(255, 208, 96, .08);
+      color: var(--yellow);
+    }
+
+    .badge-wfs.on::before {
+      background: var(--yellow);
+      box-shadow: 0 0 6px var(--yellow);
+    }
+
+    .status-badge.err {
+      border-color: rgba(255, 90, 90, .4);
+      background: rgba(255, 90, 90, .08);
+      color: var(--warn);
+    }
+
+    .status-badge.err::before {
+      background: var(--warn);
+      box-shadow: 0 0 6px var(--warn);
+    }
 
     /* 헤더 상단 미니 점 색상 동기화 */
-    .mini.on-kakao { background: var(--accent) !important; box-shadow: 0 0 5px var(--accent); }
-    .mini.on-portal { background: #fff !important; box-shadow: 0 0 5px #fff; }
-    .mini.on-wfs { background: var(--yellow) !important; box-shadow: 0 0 5px var(--yellow); }
-    .mini.err { background: var(--warn) !important; box-shadow: 0 0 5px var(--warn); }
+    .mini.on-kakao {
+      background: var(--accent) !important;
+      box-shadow: 0 0 5px var(--accent);
+    }
+
+    .mini.on-portal {
+      background: #fff !important;
+      box-shadow: 0 0 5px #fff;
+    }
+
+    .mini.on-wfs {
+      background: var(--yellow) !important;
+      box-shadow: 0 0 5px var(--yellow);
+    }
+
+    .mini.err {
+      background: var(--warn) !important;
+      box-shadow: 0 0 5px var(--warn);
+    }
 
     /* ─────────── 콘텐츠 영역 ─────────── */
     .scroll-area {
@@ -245,13 +297,19 @@
       border-radius: 12px;
       color: var(--text);
       padding: 14px 16px;
-      font-size: 16px; /* iOS 자동 줌 방지 */
+      font-size: 16px;
+      /* iOS 자동 줌 방지 */
       outline: none;
       transition: border-color .2s;
     }
 
-    .field-input:focus { border-color: var(--accent2); }
-    .field-input::placeholder { color: var(--dim); }
+    .field-input:focus {
+      border-color: var(--accent2);
+    }
+
+    .field-input::placeholder {
+      color: var(--dim);
+    }
 
     /* 탭바 */
     .tab-bar {
@@ -291,7 +349,9 @@
       -webkit-overflow-scrolling: touch;
     }
 
-    .external-links::-webkit-scrollbar { display: none; }
+    .external-links::-webkit-scrollbar {
+      display: none;
+    }
 
     .external-link-btn {
       padding: 10px 14px;
@@ -308,9 +368,17 @@
       flex-shrink: 0;
     }
 
-    .external-link-btn.molit { color: var(--accent2); }
-    .external-link-btn.naver { color: #00e56e; }
-    .external-link-btn.eum { color: #ffb84d; }
+    .external-link-btn.molit {
+      color: var(--accent2);
+    }
+
+    .external-link-btn.naver {
+      color: #00e56e;
+    }
+
+    .external-link-btn.eum {
+      color: #ffb84d;
+    }
 
     /* 패널 */
     .tab-panel {
@@ -321,7 +389,9 @@
       gap: 16px;
     }
 
-    .tab-panel.active { display: flex; }
+    .tab-panel.active {
+      display: flex;
+    }
 
     /* 데이터 카드 */
     .data-card {
@@ -373,9 +443,18 @@
       line-height: 1.4;
     }
 
-    .src-bldg { color: var(--text); }
-    .src-vworld { color: var(--yellow); }
-    .fc-val.dim { color: var(--dim); font-weight: 400; }
+    .src-bldg {
+      color: var(--text);
+    }
+
+    .src-vworld {
+      color: var(--yellow);
+    }
+
+    .fc-val.dim {
+      color: var(--dim);
+      font-weight: 400;
+    }
 
     pre.json-view {
       background: var(--surface);
@@ -390,9 +469,17 @@
       word-break: break-all;
     }
 
-    .j-key { color: #7ec8e3; }
-    .j-str { color: #a8e6a3; }
-    .j-num { color: var(--yellow); }
+    .j-key {
+      color: #7ec8e3;
+    }
+
+    .j-str {
+      color: #a8e6a3;
+    }
+
+    .j-num {
+      color: var(--yellow);
+    }
 
     .notice-box {
       border-radius: 14px;
@@ -401,12 +488,33 @@
       text-align: center;
     }
 
-    .notice-box.empty { background: rgba(107,117,137,.05); border-color: var(--border); color: var(--muted); }
-    .notice-box.info { background: rgba(0,150,255,.05); border-color: rgba(0,150,255,.3); }
-    .notice-box.err { background: rgba(255,90,90,.05); border-color: rgba(255,90,90,.3); }
+    .notice-box.empty {
+      background: rgba(107, 117, 137, .05);
+      border-color: var(--border);
+      color: var(--muted);
+    }
 
-    .notice-title { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
-    .notice-desc { font-size: 13px; line-height: 1.6; color: var(--muted); }
+    .notice-box.info {
+      background: rgba(0, 150, 255, .05);
+      border-color: rgba(0, 150, 255, .3);
+    }
+
+    .notice-box.err {
+      background: rgba(255, 90, 90, .05);
+      border-color: rgba(255, 90, 90, .3);
+    }
+
+    .notice-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .notice-desc {
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--muted);
+    }
 
     .map-container {
       width: 100%;
@@ -420,7 +528,7 @@
     .sheet-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,.55);
+      background: rgba(0, 0, 0, .55);
       z-index: 90;
       opacity: 0;
       pointer-events: none;
@@ -445,7 +553,7 @@
       display: flex;
       flex-direction: column;
       transform: translateY(110%);
-      transition: transform .3s cubic-bezier(.32,.72,0,1);
+      transition: transform .3s cubic-bezier(.32, .72, 0, 1);
       padding-bottom: var(--safe-bottom);
     }
 
@@ -508,8 +616,14 @@
       transition: all .15s;
     }
 
-    .addr-item:first-child { margin-top: 0; }
-    .addr-item:active { border-color: var(--accent); background: rgba(0,229,160,.08); }
+    .addr-item:first-child {
+      margin-top: 0;
+    }
+
+    .addr-item:active {
+      border-color: var(--accent);
+      background: rgba(0, 229, 160, .08);
+    }
 
     .addr-main {
       font-size: 14px;
@@ -519,7 +633,10 @@
       line-height: 1.4;
     }
 
-    .addr-sub { font-size: 12px; color: var(--muted); }
+    .addr-sub {
+      font-size: 12px;
+      color: var(--muted);
+    }
 
     .addr-type {
       font-size: 10px;
@@ -529,8 +646,17 @@
       font-weight: 700;
     }
 
-    .addr-type.road { background: rgba(0,150,255,.15); color: var(--accent2); border: 1px solid rgba(0,150,255,.3); }
-    .addr-type.jibun { background: rgba(255,208,96,.15); color: var(--yellow); border: 1px solid rgba(255,208,96,.3); }
+    .addr-type.road {
+      background: rgba(0, 150, 255, .15);
+      color: var(--accent2);
+      border: 1px solid rgba(0, 150, 255, .3);
+    }
+
+    .addr-type.jibun {
+      background: rgba(255, 208, 96, .15);
+      color: var(--yellow);
+      border: 1px solid rgba(255, 208, 96, .3);
+    }
 
     /* ─────────── 하단 고정 검색바 ─────────── */
     .search-dock {
@@ -567,33 +693,60 @@
       flex-shrink: 0;
     }
 
-    .search-btn:active { opacity: .8; }
-    .search-btn:disabled { opacity: .5; }
+    .search-btn:active {
+      opacity: .8;
+    }
 
-    ::-webkit-scrollbar { width: 5px; height: 5px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--dim); border-radius: 5px; }
+    .search-btn:disabled {
+      opacity: .5;
+    }
+
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--dim);
+      border-radius: 5px;
+    }
 
     .spinner {
       width: 18px;
       height: 18px;
-      border: 2px solid rgba(10,12,16,.4);
+      border: 2px solid rgba(10, 12, 16, .4);
       border-top-color: #0a0c10;
       border-radius: 50%;
       animation: spin .6s linear infinite;
     }
 
     .spinner.light {
-      border-color: rgba(255,255,255,.2);
+      border-color: rgba(255, 255, 255, .2);
       border-top-color: #fff;
     }
 
-    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
 
     /* 큰 화면일 때 그리드 확장 */
     @media (min-width: 600px) {
-      .field-grid { grid-template-columns: repeat(3, 1fr); }
-      .search-dock, .result-sheet, .sheet-backdrop { max-width: 480px; margin: 0 auto; }
+      .field-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .search-dock,
+      .result-sheet,
+      .sheet-backdrop {
+        max-width: 480px;
+        margin: 0 auto;
+      }
     }
   </style>
 </head>
@@ -634,11 +787,13 @@
           <label class="field-label">Kakao REST API Key</label>
           <a href="https://developers.kakao.com/docs/ko/tutorial/start" target="_blank" class="help-link">key 생성 ↗</a>
         </div>
-        <input class="field-input" id="kakaoKey" type="password" placeholder="발급받은 키를 입력하세요" oninput="checkKakaoKey()" />
+        <input class="field-input" id="kakaoKey" type="password" placeholder="발급받은 키를 입력하세요"
+          oninput="checkKakaoKey()" />
       </div>
       <div class="input-group">
         <label class="field-label">Kakao JavaScript Key (지도용)</label>
-        <input class="field-input" id="kakaoJsKey" type="password" placeholder="JavaScript 앱 키를 입력하세요" oninput="checkKakaoKey()" />
+        <input class="field-input" id="kakaoJsKey" type="password" placeholder="JavaScript 앱 키를 입력하세요"
+          oninput="checkKakaoKey()" />
       </div>
     </div>
   </div>
@@ -651,7 +806,8 @@
 
   <!-- 외부링크 칩 -->
   <div class="external-links" id="externalLinks">
-    <a href="https://rt.molit.go.kr/pt/gis/gis.do?srhThingSecd=A&mobileAt=" target="_blank" class="external-link-btn molit">🏛️ 국토부 실거래가</a>
+    <a href="https://rt.molit.go.kr/pt/gis/gis.do?srhThingSecd=A&mobileAt=" target="_blank"
+      class="external-link-btn molit">🏛️ 국토부 실거래가</a>
     <a href="#" target="_blank" rel="noopener noreferrer" class="external-link-btn naver" id="naverBtn">🟢 네이버 실거래가</a>
     <a href="#" target="_blank" rel="noopener noreferrer" class="external-link-btn eum" id="eumBtn">🗺️ 토지이음</a>
   </div>
@@ -964,10 +1120,25 @@
       const externalLinks = document.getElementById('externalLinks');
       const naverBtn = document.getElementById('naverBtn');
       const eumBtn = document.getElementById('eumBtn');
+
       let searchKeyword = (doc.place_name || doc.road_address?.address_name || doc.address?.address_name || doc.address_name || '').replace('[VWorld] ', '');
-      naverBtn.href = `https://new.land.naver.com/complexes?ms=${lat},${lng},17&a=APT:ABYG:JGC&e=RETAIL&sk=${encodeURIComponent(searchKeyword)}`;
+
+      // 1. 기기 판별 (모바일 vs PC)
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+      // 2. 판별 결과에 따른 네이버 링크 변경
+      if (isMobile) {
+        // 모바일일 경우 네이버 지도 검색으로 연결
+        naverBtn.href = `https://m.map.naver.com/search2/search.naver?query=${encodeURIComponent(searchKeyword)}`;
+      } else {
+        // PC일 경우 기존 실거래가 페이지로 연결
+        naverBtn.href = `https://new.land.naver.com/complexes?ms=${lat},${lng},17&a=APT:ABYG:JGC&e=RETAIL&sk=${encodeURIComponent(searchKeyword)}`;
+      }
+
+      // 3. 버튼 표시 (이 코드가 조건문 바깥에 있으므로 어떤 경우든 버튼은 유지됩니다)
       externalLinks.style.display = 'flex';
 
+      // (이후 건축물대장 API 호출 로직은 그대로 두시면 됩니다)
       document.getElementById('panel-result').innerHTML = `
     <div class="notice-box info" style="margin:auto;">
       <div class="spinner light" style="margin:0 auto 16px;width:30px;height:30px;"></div>
