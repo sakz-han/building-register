@@ -654,7 +654,15 @@
     // ═══════════════════════════════════════════════════════════
     const APP_CONFIG = {
       SERVICE_KEY: 'ac91064e6b1a5db4893d6937d9d368814e53156a80479c707b535f350df23318',
-      VWORLD_KEY: 'E79BB1F4-4D0A-3CDF-A415-B3A4C7291772',
+
+      // 💻 로컬 테스트용 (VS Code Live Server)
+      VWORLD_LOCAL_KEY: '97924A5C-5676-37C0-9BDC-BC42C3B82028',
+      VWORLD_LOCAL_DOMAIN: 'http://127.0.0.1:5500',
+
+      // 🚀 배포용 (GitHub Pages)
+      VWORLD_PROD_KEY: 'F781960D-00D4-30EB-A0EA-D4051FFAE5F4',
+      VWORLD_PROD_DOMAIN: 'https://sakz-han.github.io',
+
       DEFAULT_KAKAO_REST: '',
       DEFAULT_KAKAO_JS: ''
     };
@@ -825,56 +833,53 @@
     //  ✅ uname 단일 고정 파싱 (공식 스키마 확인 완료)
     // ═══════════════════════════════════════════════════════════
 
-    /** WFS BBOX URL 생성 — WFS 1.1.0: minLat, minLng, maxLat, maxLng */
+    /** WFS BBOX URL 생성 */
+    /** 🌟 1. 환경별 키/도메인 분기 및 CQL 필터링 적용 */
     function buildWfsUrl(typeName, lng, lat) {
-      const domain = window.location.hostname || 'localhost';
-      const e = 0.0005; // 범위
-      
-      // ▼ BBOX 좌표 순서를 lng(경도), lat(위도) 순으로 정확히 수정 ▼
-      const bbox = `${lng - e},${lat - e},${lng + e},${lat + e},EPSG:4326`;
-      
+      const isLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
+      const apiKey = isLocal ? APP_CONFIG.VWORLD_LOCAL_KEY : APP_CONFIG.VWORLD_PROD_KEY;
+      const domain = isLocal ? APP_CONFIG.VWORLD_LOCAL_DOMAIN : APP_CONFIG.VWORLD_PROD_DOMAIN;
+
       return `${WFS_URL}?endpoint=wfs&SERVICE=WFS&VERSION=1.1.0&REQUEST=GetFeature` +
-        `&TYPENAME=${typeName}&SRSNAME=EPSG:4326&BBOX=${bbox}` +
-        `&outputFormat=application%2Fjson${WFS_MAX}` +
-        `&key=${APP_CONFIG.VWORLD_KEY}&domain=${domain}`;
+        `&TYPENAME=${typeName}` +
+        `&SRSNAME=EPSG:4326` +
+        // 🌟 POINT(경도 위도) 순서로 작성되어 BBOX의 순서 꼬임 문제가 해결됩니다
+        `&CQL_FILTER=INTERSECTS(geom,POINT(${lng}%20${lat}))` +
+        `&outputFormat=application%2Fjson&maxFeatures=1` +
+        `&key=${apiKey}&domain=${domain}`;
     }
 
-    /**
-     * 단일 레이어 조회
-     * feature 있음 → uname 값 반환 (없으면 layer.label fallback)
-     * feature 없음 → null (해당 구역 아님)
-     */
-    async function fetchOneLayer(layer, lng, lat) {
-      try {
-        const res = await fetch(buildWfsUrl(layer.typeName, lng, lat));
-        if (!res.ok) return null;
-        const text = await res.text();
-        if (!text || text.trim().startsWith('<')) return null;
-        const json = JSON.parse(text);
-        if (json?.features?.length > 0) {
-          const uname = json.features[0].properties?.uname;
-          return (uname && uname.trim()) ? uname.trim() : layer.label;
-        }
-      } catch (e) {
-        console.warn(`[WFS] ${layer.typeName} 실패:`, e.message);
-      }
-      return null;
-    }
-
-    /** 용도지역만 단독 조회 (불필요한 구역 조회 삭제) */
+    /** 🌟 2. 용도지역만 단독 조회 (불필요한 구역 조회 삭제) */
     async function fetchWfsZoning(lng, lat) {
       const wfsBadge = document.getElementById('statusWfs');
 
-      const zoningResults = await Promise.all(
-        WFS_ZONING_LAYERS.map(layer => fetchOneLayer(layer, lng, lat))
+      // 5개 레이어 동시 요청
+      const zoningFetches = WFS_ZONING_LAYERS.map(layer =>
+        fetch(buildWfsUrl(layer.typeName, lng, lat))
+          .then(r => r.ok ? r.json() : null)
+          .catch(() => null)
       );
-      const area1Str = zoningResults.find(v => v !== null) || '—';
 
-      const hasData = area1Str !== '—';
+      const zoningResults = await Promise.allSettled(zoningFetches);
+
+      let area1Str = '';
+      for (const settled of zoningResults) {
+        if (settled.status !== 'fulfilled' || !settled.value) continue;
+        const json = settled.value;
+        if ((json?.features?.length ?? 0) === 0) continue;
+
+        // 제공해주신 성공 코드의 유연한 속성 파싱 방식 적용
+        const props = json.features[0].properties || {};
+        const nameProp = props.uname || props.prposArea1Nm || props.uq_nm || props.ud_nm || props.uq111_nm || props.zone_nm || props.name;
+
+        if (nameProp) { area1Str = String(nameProp).trim(); break; }
+      }
+
+      const hasData = !!area1Str;
       wfsBadge.className = `status-badge badge-wfs ${hasData ? 'on' : ''}`;
 
-      console.log('[WFS] 대표 용도지역:', area1Str); // 로그도 용도지역만 출력
-      return { area1Str }; // area2Str 반환 제거
+      console.log('[WFS] 대표 용도지역 결과:', area1Str || '없음');
+      return { area1Str: area1Str || '—' };
     }
 
     // ═══════════════════════════════════════════════════════════
